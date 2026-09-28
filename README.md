@@ -200,11 +200,9 @@ Saved evaluation metrics JSON to: models\model_metrics.json
 
 ## TROUBLESHOOTING
 
-| Symptom / Error | Cause | Solution |
-| :--- | :--- | :--- |
-| `Could not access webcam device at index 0` | Windows camera permissions or hardware busy in another app | Ensure Windows Camera privacy settings allow desktop apps. Close Zoom/Teams/Skype and restart Streamlit. Change camera index in sidebar to `1` or `2`. |
+| `Error: Found app.py but it does not export a top-level "app" (Vercel)` | Vercel expects Flask/WSGI apps, not Streamlit apps | Deploy on **Streamlit Community Cloud** (share.streamlit.io) or **Hugging Face Spaces** which natively host Streamlit long-running web servers. |
 | `FileNotFoundError: models/yoga_model.pkl` | Model file has not been trained yet | Run `python scripts/train.py` or click the "Train Model Now" button inside the Streamlit dashboard tab. |
-| `ModuleNotFoundError: No module named 'src'` | Python execution path issue | Always run scripts from the project root (`d:\AsanaVision`) or run `pip install -e .` |
+| `ModuleNotFoundError: No module named 'src'` | Python execution path issue | Always run scripts from the project root or run `pip install -e .` |
 | `Port 8501 is already in use` | Existing Streamlit process active | Run `streamlit run app.py --server.port 8502` to use a different port. |
 | `MediaPipe processing error / DLL load failed` | Outdated MSVC redistributable or missing OpenCV dependencies | Install Visual C++ Redistributable 2015-2022 and update MediaPipe: `pip install --upgrade mediapipe opencv-python`. |
 
