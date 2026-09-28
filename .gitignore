@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data & Models (excluding gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
