@@ -23,6 +23,23 @@ from src.posture_feedback import PostureEvaluator
 from src.predict import PosePredictor
 from src.reference_guides import YOGA_POSE_GUIDES
 
+# WebRTC Streamer Integration for Browser / Web Deployment
+try:
+    from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+    import av
+    HAS_WEBRTC = True
+except Exception:
+    HAS_WEBRTC = False
+
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
+
+@st.cache_resource
+def get_webrtc_pose_detector():
+    return PoseDetector(static_image_mode=False, min_detection_confidence=0.55)
+
+
 # Page Configuration
 st.set_page_config(
     page_title="AsanaVision — Holistic AI Yoga Assistant",
@@ -603,7 +620,7 @@ def main():
         # Input Mode Selection
         input_mode = st.radio(
             "Camera Input Mode:",
-            ["🎥 Live Webcam Stream", "📸 Camera Snapshot (Instant)", "📁 Upload Pose Image"],
+            ["🌐 Live Web Cam (WebRTC Stream)", "📸 Camera Snapshot (Instant)", "💻 Local Hardware Camera", "📁 Upload Pose Image"],
             horizontal=True
         )
 
@@ -626,11 +643,35 @@ def main():
             st.markdown('<div style="font-family: \'Cinzel\', serif; font-size: 1.25rem; font-weight: 800; color: #183B2E; margin-bottom: 12px;">📹 LIVE PRACTICE CAMERA FEED</div>', unsafe_allow_html=True)
             frame_placeholder = st.empty()
 
-            if input_mode == "🎥 Live Webcam Stream":
-                run_cam = st.toggle("🟢 Activate Live Camera Stream", value=False)
+            if input_mode == "🌐 Live Web Cam (WebRTC Stream)":
+                if HAS_WEBRTC:
+                    st.info("🌐 **Live Browser WebRTC Video Feed** — Click **START** below to allow camera access and stream live pose estimation directly from your web browser!")
+                    
+                    detector = get_webrtc_pose_detector()
+                    
+                    def transform_webrtc_frame(frame: av.VideoFrame) -> av.VideoFrame:
+                        img = frame.to_ndarray(format="bgr24")
+                        img = cv2.flip(img, 1)
+                        annotated_frame, results = detector.process_frame(img)
+                        annotated_frame = detector.draw_landmarks(annotated_frame, results, draw_bbox=True)
+                        return av.VideoFrame.from_ndarray(annotated_frame, format="bgr24")
+
+                    webrtc_streamer(
+                        key="asanavision-webrtc-stream",
+                        mode=WebRtcMode.SENDRECV,
+                        rtc_configuration=RTC_CONFIGURATION,
+                        video_frame_callback=transform_webrtc_frame,
+                        media_stream_constraints={"video": True, "audio": False},
+                        async_processing=True,
+                    )
+                else:
+                    st.warning("⚠️ `streamlit-webrtc` is initializing. Please switch to **'📸 Camera Snapshot (Instant)'** for instant snapshot posture tracking!")
+
+            elif input_mode == "💻 Local Hardware Camera":
+                run_cam = st.toggle("🟢 Activate Local Hardware Camera Stream", value=False)
                 
                 if not run_cam:
-                    st.info(f"💡 Switch **'Activate Live Camera Stream'** to ON above to start tracking **{selected_pose_guide}**!")
+                    st.info(f"💡 Switch **'Activate Local Hardware Camera Stream'** to ON above to start tracking **{selected_pose_guide}**!")
                     dummy_img = np.zeros((480, 640, 3), dtype=np.uint8)
                     cv2.putText(dummy_img, f"Target Pose: {selected_pose_guide}", (160, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (143, 175, 145), 2)
                     cv2.putText(dummy_img, "Camera Standby (Toggle ON above)", (100, 270), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (246, 240, 228), 2)
@@ -643,11 +684,10 @@ def main():
                     if cap is None:
                         st.error(
                             "❌ **Unable to Access Local Server Hardware Webcam**\n\n"
-                            "• **Deploying on Streamlit Cloud / Web Server?** Cloud servers do not have physical cameras attached.\n"
-                            "  👉 **Please select '📸 Camera Snapshot (Instant)'** above to use your browser or mobile camera directly!\n\n"
+                            "• **Deploying on Streamlit Cloud / Web Server?** Cloud servers do not have physical USB cameras attached.\n"
+                            "  👉 **Please select '🌐 Live Web Cam (WebRTC Stream)' or '📸 Camera Snapshot (Instant)'** above to use your browser/mobile camera directly!\n\n"
                             "• **Running Locally on PC?** Ensure your webcam is connected and not currently in use by Zoom, Teams, or another camera application."
                         )
-                        st.info("💡 **Tip:** Switch to **'📸 Camera Snapshot (Instant)'** mode above for live browser camera posture analysis!")
                     else:
                         st.success(f"Connected to Camera Device #{active_idx} | Target Pose: **{selected_pose_guide}**")
                         detector = PoseDetector(static_image_mode=False, min_detection_confidence=0.55)
