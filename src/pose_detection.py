@@ -5,6 +5,9 @@ Provides robust real-time human pose detection, landmark extraction, performance
 
 import cv2
 import mediapipe as mp
+from mediapipe.python.solutions import pose as mp_pose
+from mediapipe.python.solutions import drawing_utils as mp_drawing
+from mediapipe.python.solutions import drawing_styles as mp_drawing_styles
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
 
@@ -19,17 +22,9 @@ class PoseDetector:
         min_detection_confidence: float = 0.55,
         min_tracking_confidence: float = 0.55
     ):
-        try:
-            self.mp_pose = mp.solutions.pose
-            self.mp_drawing = mp.solutions.drawing_utils
-            self.mp_drawing_styles = mp.solutions.drawing_styles
-        except (AttributeError, Exception):
-            import mediapipe.python.solutions.pose as mp_pose
-            import mediapipe.python.solutions.drawing_utils as mp_drawing
-            import mediapipe.python.solutions.drawing_styles as mp_drawing_styles
-            self.mp_pose = mp_pose
-            self.mp_drawing = mp_drawing
-            self.mp_drawing_styles = mp_drawing_styles
+        self.mp_pose = mp_pose
+        self.mp_drawing = mp_drawing
+        self.mp_drawing_styles = mp_drawing_styles
         
         self.pose = self.mp_pose.Pose(
             static_image_mode=static_image_mode,
