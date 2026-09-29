@@ -641,7 +641,13 @@ def main():
                     cap, active_idx = open_webcam(camera_device_idx)
                     
                     if cap is None:
-                        st.error(f"❌ Could not access webcam at index {camera_device_idx} or alternate indices (0-3). Please close other camera applications.")
+                        st.error(
+                            "❌ **Unable to Access Local Server Hardware Webcam**\n\n"
+                            "• **Deploying on Streamlit Cloud / Web Server?** Cloud servers do not have physical cameras attached.\n"
+                            "  👉 **Please select '📸 Camera Snapshot (Instant)'** above to use your browser or mobile camera directly!\n\n"
+                            "• **Running Locally on PC?** Ensure your webcam is connected and not currently in use by Zoom, Teams, or another camera application."
+                        )
+                        st.info("💡 **Tip:** Switch to **'📸 Camera Snapshot (Instant)'** mode above for live browser camera posture analysis!")
                     else:
                         st.success(f"Connected to Camera Device #{active_idx} | Target Pose: **{selected_pose_guide}**")
                         detector = PoseDetector(static_image_mode=False, min_detection_confidence=0.55)
