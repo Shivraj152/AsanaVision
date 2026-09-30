@@ -3,10 +3,23 @@ MediaPipe Pose Detection wrapper for AsanaVision.
 Provides robust real-time human pose detection, landmark extraction, performance optimization, and skeleton rendering.
 """
 
+import sys
 import cv2
 import mediapipe as mp
 import numpy as np
 from typing import Tuple, Optional, List, Dict, Any
+
+def _get_mp_solutions():
+    """Robustly retrieves MediaPipe solutions module across main thread, worker threads, and cloud environments."""
+    if hasattr(mp, "solutions") and mp.solutions is not None:
+        return mp.solutions
+    if "mediapipe.python.solutions" in sys.modules:
+        return sys.modules["mediapipe.python.solutions"]
+    try:
+        import mediapipe.python.solutions as solutions
+        return solutions
+    except Exception:
+        return mp.solutions
 
 class PoseDetector:
     """Wrapper class around MediaPipe Pose estimation engine optimized for high FPS and camera accuracy."""
@@ -19,9 +32,10 @@ class PoseDetector:
         min_detection_confidence: float = 0.55,
         min_tracking_confidence: float = 0.55
     ):
-        self.mp_pose = mp.solutions.pose
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
+        solutions = _get_mp_solutions()
+        self.mp_pose = solutions.pose
+        self.mp_drawing = solutions.drawing_utils
+        self.mp_drawing_styles = solutions.drawing_styles
         
         self.pose = self.mp_pose.Pose(
             static_image_mode=static_image_mode,
